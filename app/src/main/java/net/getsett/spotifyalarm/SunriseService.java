@@ -4,6 +4,7 @@ import android.app.IntentService;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
@@ -14,6 +15,9 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.Volley;
+import com.spotify.sdk.android.player.Config;
+import com.spotify.sdk.android.player.Player;
+import com.spotify.sdk.android.player.Spotify;
 
 import org.acra.ACRA;
 import org.json.JSONArray;
@@ -33,12 +37,17 @@ public class SunriseService extends IntentService {
         handler = new Handler();
     }
 
+    private String _spotifyUri;
+    private Player _player;
+
+
     @Override
     protected void onHandleIntent(Intent intent) {
         // Gets data from the incoming Intent
 
         queue = Volley.newRequestQueue(this.getApplicationContext());
         int minutes = intent.getIntExtra("Minutes", 5);
+        _spotifyUri = intent.getStringExtra("SpotifyUri");
         lightInterval = (minutes * 60 * 1000) / 255;
         //_lightBridge = new PhillipsHueBridge(handler);
 
@@ -51,6 +60,24 @@ public class SunriseService extends IntentService {
         mBuilder.setContentTitle("Sunrise")
                 .setContentText("Sunrise in progress")
                 .setSmallIcon(R.drawable.ic_launcher);
+
+        AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0);
+
+        Config playerConfig = new Config(this, intent.getStringExtra("SpotifyToken"), getString(R.string.spotifyApiKey));
+        _player =  Spotify.getPlayer(playerConfig, this, new Player.InitializationObserver() {
+            @Override
+            public void onInitialized(Player player) {
+                //_player.addConnectionStateCallback();
+                //_player.addPlayerNotificationCallback();
+                _player.play(_spotifyUri);
+                //handler.postDelayed(decrementLight, lightInterval);
+            }
+            @Override
+            public void onError(Throwable throwable) {
+                //Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());
+            }
+        });
 
         mNotifyManager.notify(
                 notifyId,
@@ -103,7 +130,26 @@ public class SunriseService extends IntentService {
                                 mNotifyManager.notify(notifyId, mBuilder.build());
 
                                 _brightness++;
+
+
+                                //Adjust the spotify volume
+                                if (_brightness > 25) {
+
+                                    _player.resume();
+                                    AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+                                    int volumeindex = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+                                    volumeindex = volumeindex * _brightness;
+                                    volumeindex = volumeindex / 255;
+                                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volumeindex, 0);
+                                }
+
                                 handler.postDelayed(decrementLight, lightInterval);
+                            }
+                            else if (_brightness < 25){
+                                _player.pause();
+                                Spotify.destroyPlayer(this);
+
+                                //Return the volume to where it should be
                             }
                             else
                             {

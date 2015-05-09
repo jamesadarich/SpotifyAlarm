@@ -23,11 +23,15 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.spotify.sdk.android.authentication.AuthenticationClient;
+import com.spotify.sdk.android.authentication.AuthenticationResponse;
+
 
 public class SleepActivity extends Activity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks,
         AlarmEditFragment.OnFragmentInteractionListener,
-        GoToSleepFragment.OnFragmentInteractionListener {
+        GoToSleepFragment.OnFragmentInteractionListener
+{
 
     public void onFragmentInteraction(Uri uri){
 
@@ -86,6 +90,7 @@ public class SleepActivity extends Activity
                 break;
             case 3:
                 mTitle = getString(R.string.title_section3);
+                transaction.commit();
                 break;
         }
     }
@@ -165,5 +170,4 @@ public class SleepActivity extends Activity
                     getArguments().getInt(ARG_SECTION_NUMBER));
         }
     }
-
 }

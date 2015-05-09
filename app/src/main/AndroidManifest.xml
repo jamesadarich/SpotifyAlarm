@@ -41,7 +41,10 @@
             android:name=".GoToSleepActivity"
             android:label="@string/title_activity_go_to_sleep" >
         </activity>
-
+        <!-- Spotify Login -->
+        <activity
+            android:name="com.spotify.sdk.android.authentication.LoginActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <service
             android:name=".SunsetService"
             android:exported="false" >

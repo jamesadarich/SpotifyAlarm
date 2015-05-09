@@ -11,12 +11,31 @@ import android.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import com.spotify.sdk.android.authentication.AuthenticationClient;
+import com.spotify.sdk.android.authentication.AuthenticationRequest;
+import com.spotify.sdk.android.authentication.AuthenticationResponse;
+
+import org.acra.ACRA;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 
 /**
@@ -29,6 +48,14 @@ import java.util.Date;
  */
 public class AlarmEditFragment extends Fragment
 implements View.OnClickListener {
+
+    private JSONArray _spotifyPlaylists;
+
+    // TODO: Replace with your redirect URI
+    private static final String REDIRECT_URI = "spotify-alarm://callback";
+    private String _spotifyToken = "";
+    private RequestQueue queue;
+    private static final int REQUEST_CODE = 1337;
 
     @Override
     public void onClick(View v) {
@@ -62,6 +89,15 @@ implements View.OnClickListener {
 
             intent.putExtra("AlarmId", alarm.getId());
             intent.putExtra("Minutes", seekBar.getProgress());
+            intent.putExtra("SpotifyToken", _spotifyToken);
+            Spinner s = (Spinner) getActivity().findViewById(R.id.spinner2);
+            try {
+                intent.putExtra("SpotifyUri", _spotifyPlaylists.getJSONObject((int)s.getSelectedItemId()).get("uri").toString());
+            }
+            catch (JSONException exception){
+                ACRA.getErrorReporter().handleSilentException(exception);
+            }
+
 
             PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
 
@@ -155,11 +191,41 @@ implements View.OnClickListener {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
+
+
+        queue = Volley.newRequestQueue(getActivity().getApplicationContext());
+        AuthenticationRequest.Builder builder =
+                new AuthenticationRequest.Builder(getString(R.string.spotifyApiKey), AuthenticationResponse.Type.TOKEN, REDIRECT_URI);
+        builder.setScopes(new String[]{"user-read-private", "streaming"});
+        AuthenticationRequest request = builder.build();
+
+        Intent intent = AuthenticationClient.createLoginActivityIntent(getActivity(), request);
+        startActivityForResult(intent, REQUEST_CODE);
+
+        // To close LoginActivity
+        AuthenticationClient.stopLoginActivity(getActivity(), REQUEST_CODE);
+
         try {
             mListener = (OnFragmentInteractionListener) activity;
         } catch (ClassCastException e) {
             throw new ClassCastException(activity.toString()
                     + " must implement OnFragmentInteractionListener");
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+
+        // Check if result comes from the correct activity
+        if (requestCode == REQUEST_CODE) {
+            AuthenticationResponse response = AuthenticationClient.getResponse(resultCode, intent);
+            if (response.getType() == AuthenticationResponse.Type.TOKEN) {
+
+                _spotifyToken = response.getAccessToken();
+
+                getUsername();
+            }
         }
     }
 
@@ -182,6 +248,84 @@ implements View.OnClickListener {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         public void onFragmentInteraction(Uri uri);
+    }
+
+    private void getUsername(){
+        //Get the users username
+        JsonObjectRequest usernameRequest = new SpotifyWebApiRequest(
+                Request.Method.GET,
+                "https://api.spotify.com/v1/me",
+                null,
+                _spotifyToken,
+                new Response.Listener<JSONObject>()
+                {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        // display response
+                        //Log.d("Response", response.toString());
+
+                        try {
+                            getUserPlaylists(response.get("id").toString());
+                        }
+                        catch (JSONException exception){
+                            ACRA.getErrorReporter().handleSilentException(exception);
+                        }
+                    }
+                },
+                new Response.ErrorListener()
+                {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        ACRA.getErrorReporter().handleSilentException(error);
+                    }
+                }
+        );
+
+        queue.add(usernameRequest);
+    }
+
+    private void getUserPlaylists(String username){
+        //Get the users username
+        JsonObjectRequest playlistRequest = new SpotifyWebApiRequest(
+                Request.Method.GET,
+                "https://api.spotify.com/v1/users/" + username + "/playlists",
+                null,
+                _spotifyToken,
+                new Response.Listener<JSONObject>()
+                {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        // display response
+                        try {
+                            _spotifyPlaylists = response.getJSONArray("items");
+
+                            List<String> playlistNames = new ArrayList<String>();
+                            for(int i = 0; i < _spotifyPlaylists.length(); i++){
+                                playlistNames.add(_spotifyPlaylists.getJSONObject(i).get("name").toString());
+                            }
+                            String[] playlistNamesArray = new String[playlistNames.size()];
+                            playlistNamesArray = playlistNames.toArray(playlistNamesArray);
+
+                            Spinner s = (Spinner) getActivity().findViewById(R.id.spinner2);
+                            ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(),
+                                    android.R.layout.simple_spinner_item, playlistNamesArray);
+                            s.setAdapter(adapter);
+                        }
+                        catch (JSONException exception)
+                        {
+                            ACRA.getErrorReporter().handleSilentException(exception);
+                        }
+                    }
+                },
+                new Response.ErrorListener()
+                {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        ACRA.getErrorReporter().handleSilentException(error);
+                    }
+                }
+        );
+        queue.add(playlistRequest);
     }
 
 }

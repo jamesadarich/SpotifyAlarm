@@ -4,6 +4,7 @@ import android.app.IntentService;
 import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.Context;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.PowerManager;
@@ -18,6 +19,9 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.Volley;
+import com.spotify.sdk.android.player.Config;
+import com.spotify.sdk.android.player.Player;
+import com.spotify.sdk.android.player.Spotify;
 
 import org.acra.ACRA;
 import org.json.JSONArray;
@@ -33,6 +37,9 @@ import org.json.JSONObject;
 */
 public class SunsetService extends IntentService {
 
+    private String _spotifyUri;
+    private String _lightId;
+
     public SunsetService() {
         super("Sunset Service");
         handler = new Handler();
@@ -44,7 +51,10 @@ public class SunsetService extends IntentService {
 
         queue = Volley.newRequestQueue(this.getApplicationContext());
         int minutes = intent.getIntExtra("Minutes", 5);
+        _spotifyUri = intent.getStringExtra("SpotifyUri");
         lightInterval = (minutes * 60 * 1000) / 255;
+        _lightId = intent.getStringExtra("HueLightId");
+
         //_lightBridge = new PhillipsHueBridge(handler);
 
         PowerManager pm = (PowerManager) this.getApplicationContext().getSystemService(Context.POWER_SERVICE);
@@ -61,8 +71,24 @@ public class SunsetService extends IntentService {
                 notifyId,
                 mBuilder.build());
         handler.post(setUp);
-        //handler.postDelayed(decrementLight, lightInterval);
+
+        Config playerConfig = new Config(this, intent.getStringExtra("SpotifyToken"), getString(R.string.spotifyApiKey));
+        _player =  Spotify.getPlayer(playerConfig, this, new Player.InitializationObserver() {
+            @Override
+            public void onInitialized(Player player) {
+                //_player.addConnectionStateCallback();
+                //_player.addPlayerNotificationCallback();
+                _player.play(_spotifyUri);
+                //handler.postDelayed(decrementLight, lightInterval);
+            }
+            @Override
+            public void onError(Throwable throwable) {
+                //Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());
+            }
+        });
     }
+
+    private Player _player;
     private PhillipsHueBridge _lightBridge;
     private Handler handler;
     private int _brightness = 255;
@@ -78,7 +104,7 @@ public class SunsetService extends IntentService {
     private Runnable decrementLight = new Runnable(){
         public void run()
         {
-            String url = "http://" + _ipAddress + "/api/" + _username + "/lights/1/state";
+            String url = "http://" + _ipAddress + "/api/" + _username + "/lights/" + _lightId + "/state";
 
             JSONObject body = new JSONObject();
 
@@ -108,7 +134,24 @@ public class SunsetService extends IntentService {
                                 mNotifyManager.notify(notifyId, mBuilder.build());
 
                                 _brightness--;
+
                                 handler.postDelayed(decrementLight, lightInterval);
+
+                                //Adjust the spotify volume
+                                if (_brightness > 25) {
+
+                                    AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+                                    int volumeindex = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) / 2;
+                                    volumeindex = volumeindex * _brightness;
+                                    volumeindex = volumeindex / 255;
+                                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volumeindex, 0);
+                                }
+                            }
+                            else if (_brightness < 25){
+                                _player.pause();
+                                Spotify.destroyPlayer(this);
+
+                                //Return the volume to where it should be
                             }
                             else
                             {
