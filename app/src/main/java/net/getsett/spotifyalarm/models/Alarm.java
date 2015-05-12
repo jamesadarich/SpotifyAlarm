@@ -1,14 +1,14 @@
-package net.getsett.spotifyalarm;
+package net.getsett.spotifyalarm.models;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.widget.SeekBar;
 
 import com.orm.SugarRecord;
 
-import java.util.UUID;
+import net.getsett.spotifyalarm.broadcastreceivers.AlarmBroadcastReceiver;
+
 import java.util.Date;
 
 /**

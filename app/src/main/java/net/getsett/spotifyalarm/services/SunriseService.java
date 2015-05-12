@@ -1,17 +1,14 @@
-package net.getsett.spotifyalarm;
+package net.getsett.spotifyalarm.services;
 
 import android.app.IntentService;
 import android.app.NotificationManager;
-import android.content.Intent;
 import android.content.Context;
+import android.content.Intent;
 import android.media.AudioManager;
-import android.os.Bundle;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.ProgressBar;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -23,75 +20,155 @@ import com.spotify.sdk.android.player.Config;
 import com.spotify.sdk.android.player.Player;
 import com.spotify.sdk.android.player.Spotify;
 
+import net.getsett.spotifyalarm.PhillipsHueBridge;
+import net.getsett.spotifyalarm.R;
+import net.getsett.spotifyalarm.integrations.philipshue.Bridge;
+import net.getsett.spotifyalarm.integrations.philipshue.LightBulb;
+import net.getsett.spotifyalarm.models.Options;
+import net.getsett.spotifyalarm.volleyextensions.RestJsonArrayRequest;
+
 import org.acra.ACRA;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
  * a service on a separate handler thread.
  * <p/>
- * TODO: Customize class - update intent actions, extra parameters and static
- * helper methods.
-*/
-public class SunsetService extends IntentService {
-
-    private String _spotifyUri;
-    private String _lightId;
-
-    public SunsetService() {
-        super("Sunset Service");
+ * TODO: Customize class - update intent actions and extra parameters.
+ */
+public class SunriseService extends IntentService {
+    public SunriseService() {
+        super("Sunrise Service");
         handler = new Handler();
     }
+
+    private String _spotifyUri;
+    private Player _player;
+    private Options _options;
+
 
     @Override
     protected void onHandleIntent(Intent intent) {
         // Gets data from the incoming Intent
 
-        queue = Volley.newRequestQueue(this.getApplicationContext());
-        int minutes = intent.getIntExtra("Minutes", 5);
-        _spotifyUri = intent.getStringExtra("SpotifyUri");
-        lightInterval = (minutes * 60 * 1000) / 255;
-        _lightId = intent.getStringExtra("HueLightId");
+        _options = (Options)intent.getSerializableExtra("options");
 
         //_lightBridge = new PhillipsHueBridge(handler);
 
         PowerManager pm = (PowerManager) this.getApplicationContext().getSystemService(Context.POWER_SERVICE);
-        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Sunset Service");
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Sunrise Service");
         wakeLock.acquire();
 
         mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new NotificationCompat.Builder(this);
-        mBuilder.setContentTitle("Sunset")
-                .setContentText("Sunset in progress")
+        mBuilder.setContentTitle("Sunrise")
+                .setContentText("Sunrise in progress")
                 .setSmallIcon(R.drawable.ic_launcher);
+
+        AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0);
+
+        if (_options.SpotifyOptions != null) {
+            Config playerConfig = new Config(this, _options.SpotifyOptions.Token, getString(R.string.spotifyApiKey));
+            _player = Spotify.getPlayer(playerConfig, this, new Player.InitializationObserver() {
+                @Override
+                public void onInitialized(Player player) {
+                    //_player.addConnectionStateCallback();
+                    //_player.addPlayerNotificationCallback();
+                    _player.play(_options.SpotifyOptions.PlaylistUri);
+                    //handler.postDelayed(decrementLight, lightInterval);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    //Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());
+                }
+            });
+        }
 
         mNotifyManager.notify(
                 notifyId,
                 mBuilder.build());
-        handler.post(setUp);
+        //handler.post(setUp);
 
-        Config playerConfig = new Config(this, intent.getStringExtra("SpotifyToken"), getString(R.string.spotifyApiKey));
-        _player =  Spotify.getPlayer(playerConfig, this, new Player.InitializationObserver() {
-            @Override
-            public void onInitialized(Player player) {
-                //_player.addConnectionStateCallback();
-                //_player.addPlayerNotificationCallback();
-                _player.play(_spotifyUri);
-                //handler.postDelayed(decrementLight, lightInterval);
-            }
-            @Override
-            public void onError(Throwable throwable) {
-                //Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());
-            }
-        });
+        new SunsetTask().execute();
     }
 
-    private Player _player;
+    private class SunsetTask extends AsyncTask<Void, Integer, Void> {
+        /** The system calls this to perform work in a worker thread and
+         * delivers it the parameters given to AsyncTask.execute() */
+        protected Void doInBackground(Void... nothing) {
+            //loadImageFromNetwork(urls[0]);
+            Bridge bridge = new Bridge(getApplicationContext());
+            LightBulb lightBulb = bridge.getLightBulbById(_options.HueOptions.LightBulbId);
+
+            //Initially set the brightness to 0
+            lightBulb.setBrightness(0);
+
+
+            int brightness = lightBulb.getBrightness();
+            while (brightness < 255) {
+                double progress = (double) brightness / 255.0;
+                int progressPercent = (int) Math.floor(progress * 100);
+                publishProgress(progressPercent);
+                int interval = (int) (progress * (_options.TimeToSunset * 60 * 1000)) / brightness;
+                try {
+                    Thread.sleep(interval);
+                }
+                catch (InterruptedException exception){
+
+                }
+                brightness++;
+                lightBulb.setBrightness(brightness);
+
+                //Adjust the spotify volume
+                if (_options.SpotifyOptions != null) {
+                    if (progressPercent > 10) {
+
+                        AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+                        int volumeindex = (int)((double)audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) * 0.75);
+                        volumeindex = volumeindex * progressPercent;
+                        volumeindex = volumeindex / 100;
+                        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volumeindex, 0);
+                    }
+                    /*else {
+                        _player.pause();
+                        Spotify.destroyPlayer(this);
+
+                        //TODO Return the volume to where it should be
+                    }*/
+                }
+            }
+
+
+            return null;
+        }
+
+        protected void onProgressUpdate(Integer... progress) {
+            mBuilder.setProgress(100, progress[0], false);
+            // Displays the progress bar for the first time.
+            mNotifyManager.notify(notifyId, mBuilder.build());
+        }
+
+        /** The system calls this to perform work in the UI thread and delivers
+         * the result from doInBackground() */
+        protected void onPostExecute(Void result) {
+            //mImageView.setImageBitmap(result);
+            // When the loop is finished, updates the notification
+            mBuilder.setContentText("Sunset")
+                    // Removes the progress bar
+                    .setProgress(0,0,false);
+            mNotifyManager.notify(notifyId, mBuilder.build());
+            wakeLock.release();
+        }
+    }
+
     private PhillipsHueBridge _lightBridge;
     private Handler handler;
-    private int _brightness = 255;
+    private int _brightness = 0;
     private RequestQueue queue;
     private int lightInterval;
     private NotificationManager mNotifyManager;
@@ -104,7 +181,7 @@ public class SunsetService extends IntentService {
     private Runnable decrementLight = new Runnable(){
         public void run()
         {
-            String url = "http://" + _ipAddress + "/api/" + _username + "/lights/" + _lightId + "/state";
+            String url = "http://" + _ipAddress + "/api/" + _username + "/lights/1/state";
 
             JSONObject body = new JSONObject();
 
@@ -126,26 +203,28 @@ public class SunsetService extends IntentService {
                         @Override
                         public void onResponse(JSONArray response) {
 
-                            if (_brightness > 0) {
+                            if (_brightness < 255) {
 
                                 int progress = (int) Math.floor((((double) _brightness) / 255.0) * 100);
                                 mBuilder.setProgress(100, progress, false);
                                 // Displays the progress bar for the first time.
                                 mNotifyManager.notify(notifyId, mBuilder.build());
 
-                                _brightness--;
+                                _brightness++;
 
-                                handler.postDelayed(decrementLight, lightInterval);
 
                                 //Adjust the spotify volume
                                 if (_brightness > 25) {
 
+                                    _player.resume();
                                     AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-                                    int volumeindex = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) / 2;
+                                    int volumeindex = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
                                     volumeindex = volumeindex * _brightness;
                                     volumeindex = volumeindex / 255;
                                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volumeindex, 0);
                                 }
+
+                                handler.postDelayed(decrementLight, lightInterval);
                             }
                             else if (_brightness < 25){
                                 _player.pause();
@@ -157,7 +236,7 @@ public class SunsetService extends IntentService {
                             {
 
                                 // When the loop is finished, updates the notification
-                                mBuilder.setContentText("Sunset")
+                                mBuilder.setContentText("Sunrise")
                                         // Removes the progress bar
                                         .setProgress(0,0,false);
                                 mNotifyManager.notify(notifyId, mBuilder.build());

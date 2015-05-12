@@ -1,49 +1,65 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" tools:context="net.getsett.spotifyalarm.AlarmEditFragment">
+    android:layout_height="match_parent" tools:context="net.getsett.spotifyalarm.SunriseEditFragment">
 
     <!-- TODO: Update blank fragment layout -->
 
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/scrollView">
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="0 Minutes"
+                android:id="@+id/textView4"
+                android:layout_centerHorizontal="true"
+                android:textAlignment="center" />
     <SeekBar
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/seekBar3"
-        android:layout_gravity="right|top"
-        android:layout_below="@+id/timePicker2"
-        android:layout_alignParentStart="true" />
+        android:id="@+id/seekBar3" />
 
-    <TimePicker
-        android:layout_width="wrap_content"
+
+            <TimePicker
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/timePicker2" />
+
+
+
+    <Switch
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/timePicker2"
-        android:layout_gravity="center_horizontal|top"
-        android:layout_marginLeft="114dp"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true" />
+        android:text="Audio"
+        android:id="@+id/switch3"/>
+    <Spinner
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/spinner2" />
 
+
+    <Switch
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Lights"
+        android:id="@+id/switch4" />
+    <Spinner
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/spinner4" />
     <Button
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="Set!"
-        android:id="@+id/button4"
-        android:layout_below="@+id/spinner2"
-        android:layout_centerHorizontal="true" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="0 Minutes"
-        android:id="@+id/textView4"
-        android:layout_below="@+id/timePicker2"
-        android:layout_centerHorizontal="true" />
-
-    <Spinner
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/spinner2"
-        android:layout_below="@+id/seekBar3"
-        android:layout_alignParentStart="true"
-        android:layout_toStartOf="@+id/button4"
-        android:layout_alignParentEnd="true" />
+        android:id="@+id/button4" />
+    </LinearLayout>
+    </ScrollView>
 
 </RelativeLayout>

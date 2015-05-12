@@ -21,7 +21,7 @@
         </activity>
 
         <receiver
-            android:name=".AlarmBroadcastReceiver"
+            android:name=".broadcastreceivers.AlarmBroadcastReceiver"
             android:process=":remote" />
 
         <activity
@@ -46,11 +46,11 @@
             android:name="com.spotify.sdk.android.authentication.LoginActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <service
-            android:name=".SunsetService"
+            android:name=".services.SunsetService"
             android:exported="false" >
         </service>
         <service
-            android:name=".SunriseService"
+            android:name=".services.SunriseService"
             android:exported="false" >
         </service>
     </application>

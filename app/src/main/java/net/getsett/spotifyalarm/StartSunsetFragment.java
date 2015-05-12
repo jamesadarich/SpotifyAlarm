@@ -1,12 +1,10 @@
 package net.getsett.spotifyalarm;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.app.Fragment;
-import android.os.PowerManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,14 +26,18 @@ import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
 
+import net.getsett.spotifyalarm.integrations.spotify.SpotifyWebApiRequest;
+import net.getsett.spotifyalarm.models.HueOptions;
+import net.getsett.spotifyalarm.models.Options;
+import net.getsett.spotifyalarm.models.SpotifyOptions;
+import net.getsett.spotifyalarm.services.SunsetService;
+
 import org.acra.ACRA;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Dictionary;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -45,13 +47,13 @@ import java.util.Map;
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
- * {@link GoToSleepFragment.OnFragmentInteractionListener} interface
+ * {@link StartSunsetFragment.OnFragmentInteractionListener} interface
  * to handle interaction events.
- * Use the {@link GoToSleepFragment#newInstance} factory method to
+ * Use the {@link StartSunsetFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
 
-public class GoToSleepFragment extends Fragment
+public class StartSunsetFragment extends Fragment
         implements View.OnClickListener, CompoundButton.OnCheckedChangeListener {
 
     @Override
@@ -70,34 +72,35 @@ public class GoToSleepFragment extends Fragment
     public void onClick(View v) {
         if (getActivity().findViewById(R.id.button5) == v){
 
-            /*Intent puzzleIntent = new Intent(getActivity(), GoToSleepActivity.class);
+            Options options = new Options();
+            options.TimeToSunset = ((SeekBar)getActivity().findViewById(R.id.seekBar4)).getProgress();
 
-            puzzleIntent.putExtra("Minutes", ((SeekBar)getActivity().findViewById(R.id.seekBar4)).getProgress());
-
-            puzzleIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                    + Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-            getActivity().startActivity(puzzleIntent);
-            */
-
-            Intent intent = new Intent(getActivity(), SunsetService.class);
-            intent.putExtra("Minutes", ((SeekBar)getActivity().findViewById(R.id.seekBar4)).getProgress());
+            //If audio is requested by the user then get the details
             if (((Switch)getActivity().findViewById(R.id.switch1)).isChecked()) {
-                intent.putExtra("SpotifyToken", _spotifyToken);
+
+                options.SpotifyOptions = new SpotifyOptions();
+                options.SpotifyOptions.Token = _spotifyToken;
+
                 Spinner s = (Spinner) getActivity().findViewById(R.id.spinner);
                 try {
-                    intent.putExtra("SpotifyUri", _spotifyPlaylists.getJSONObject((int) s.getSelectedItemId()).get("uri").toString());
+                    options.SpotifyOptions.PlaylistUri = _spotifyPlaylists.getJSONObject((int) s.getSelectedItemId()).get("uri").toString();
                 } catch (JSONException exception) {
                     ACRA.getErrorReporter().handleSilentException(exception);
                 }
             }
 
             if (((Switch)getActivity().findViewById(R.id.switch2)).isChecked()) {
+
+                options.HueOptions = new HueOptions();
+
                 Spinner s = (Spinner) getActivity().findViewById(R.id.spinner3);
 
-                intent.putExtra("HueLightId", _lights.get(s.getSelectedItem().toString()).toString());
+                options.HueOptions.LightBulbId =  _lights.get(s.getSelectedItem().toString());
             }
 
-
+            //Create new intent add the info and start the service!
+            Intent intent = new Intent(getActivity(), SunsetService.class);
+            intent.putExtra("options", options);
             getActivity().startService(intent);
         }
     }
@@ -124,8 +127,8 @@ public class GoToSleepFragment extends Fragment
      * @return A new instance of fragment GoToSleepFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static GoToSleepFragment newInstance(String param1, String param2) {
-        GoToSleepFragment fragment = new GoToSleepFragment();
+    public static StartSunsetFragment newInstance(String param1, String param2) {
+        StartSunsetFragment fragment = new StartSunsetFragment();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
@@ -133,7 +136,7 @@ public class GoToSleepFragment extends Fragment
         return fragment;
     }
 
-    public GoToSleepFragment() {
+    public StartSunsetFragment() {
         // Required empty public constructor
     }
 

@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.SeekBar;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
@@ -21,11 +22,20 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
+
+import net.getsett.spotifyalarm.broadcastreceivers.AlarmBroadcastReceiver;
+import net.getsett.spotifyalarm.dataaccess.AlarmRepository;
+import net.getsett.spotifyalarm.integrations.spotify.SpotifyWebApiRequest;
+import net.getsett.spotifyalarm.models.Alarm;
+import net.getsett.spotifyalarm.models.HueOptions;
+import net.getsett.spotifyalarm.models.Options;
+import net.getsett.spotifyalarm.models.SpotifyOptions;
 
 import org.acra.ACRA;
 import org.json.JSONArray;
@@ -35,18 +45,21 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
- * {@link AlarmEditFragment.OnFragmentInteractionListener} interface
+ * {@link SunriseEditFragment.OnFragmentInteractionListener} interface
  * to handle interaction events.
- * Use the {@link AlarmEditFragment#newInstance} factory method to
+ * Use the {@link SunriseEditFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class AlarmEditFragment extends Fragment
+public class SunriseEditFragment extends Fragment
 implements View.OnClickListener {
 
     private JSONArray _spotifyPlaylists;
@@ -56,6 +69,7 @@ implements View.OnClickListener {
     private String _spotifyToken = "";
     private RequestQueue queue;
     private static final int REQUEST_CODE = 1337;
+    private Map<String, Integer> _lights = new HashMap<String, Integer>();
 
     @Override
     public void onClick(View v) {
@@ -87,18 +101,33 @@ implements View.OnClickListener {
 
             new AlarmRepository().add(alarm);
 
-            intent.putExtra("AlarmId", alarm.getId());
-            intent.putExtra("Minutes", seekBar.getProgress());
-            intent.putExtra("SpotifyToken", _spotifyToken);
-            Spinner s = (Spinner) getActivity().findViewById(R.id.spinner2);
-            try {
-                intent.putExtra("SpotifyUri", _spotifyPlaylists.getJSONObject((int)s.getSelectedItemId()).get("uri").toString());
-            }
-            catch (JSONException exception){
-                ACRA.getErrorReporter().handleSilentException(exception);
+            Options options = new Options();
+            options.TimeToSunset = seekBar.getProgress();
+
+            //If audio is requested by the user then get the details
+            if (((Switch)getActivity().findViewById(R.id.switch3)).isChecked()) {
+
+                options.SpotifyOptions = new SpotifyOptions();
+                options.SpotifyOptions.Token = _spotifyToken;
+
+                Spinner s = (Spinner) getActivity().findViewById(R.id.spinner2);
+                try {
+                    options.SpotifyOptions.PlaylistUri = _spotifyPlaylists.getJSONObject((int) s.getSelectedItemId()).get("uri").toString();
+                } catch (JSONException exception) {
+                    ACRA.getErrorReporter().handleSilentException(exception);
+                }
             }
 
+            if (((Switch)getActivity().findViewById(R.id.switch4)).isChecked()) {
 
+                options.HueOptions = new HueOptions();
+
+                Spinner s = (Spinner) getActivity().findViewById(R.id.spinner4);
+
+                options.HueOptions.LightBulbId =  _lights.get(s.getSelectedItem().toString());
+            }
+
+            intent.putExtra("options", options);
             PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
 
             alarms.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), alarmIntent);
@@ -124,8 +153,8 @@ implements View.OnClickListener {
      * @return A new instance of fragment AlarmEditFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static AlarmEditFragment newInstance(String param1, String param2) {
-        AlarmEditFragment fragment = new AlarmEditFragment();
+    public static SunriseEditFragment newInstance(String param1, String param2) {
+        SunriseEditFragment fragment = new SunriseEditFragment();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
@@ -133,7 +162,7 @@ implements View.OnClickListener {
         return fragment;
     }
 
-    public AlarmEditFragment() {
+    public SunriseEditFragment() {
         // Required empty public constructor
     }
 
@@ -211,6 +240,8 @@ implements View.OnClickListener {
             throw new ClassCastException(activity.toString()
                     + " must implement OnFragmentInteractionListener");
         }
+
+        GetHueBulbs();
     }
 
     @Override
@@ -328,4 +359,66 @@ implements View.OnClickListener {
         queue.add(playlistRequest);
     }
 
+    private void GetHueBulbs(){
+        JsonArrayRequest hueRequest = new JsonArrayRequest("https://www.meethue.com/api/nupnp",
+                new Response.Listener<JSONArray>() {
+                    @Override
+                    public void onResponse(JSONArray response) {
+                        try {
+
+                            String _hueIpAddress = ((JSONObject) response.get(0)).get("internalipaddress").toString();
+                            String _hueUsername = "james-test";
+                            JsonObjectRequest lightsRequest = new JsonObjectRequest(Request.Method.GET,
+                                    "http://" + _hueIpAddress + "/api/" + _hueUsername + "/lights",
+                                    new Response.Listener<JSONObject>() {
+                                        @Override
+                                        public void onResponse(JSONObject response) {
+                                            List<String> lightNames = new ArrayList<String>();
+
+                                            Iterator<String> keys = response.keys();
+                                            while(keys.hasNext()) {
+                                                String key = keys.next();
+
+                                                try {
+                                                    String name = response.getJSONObject(key).getString("name");
+                                                    _lights.put(name, Integer.parseInt(key));
+                                                    lightNames.add(name);
+                                                }
+                                                catch (JSONException ex){
+
+                                                }
+                                            }
+                                            String[] lightNamesArray = new String[lightNames.size()];
+                                            lightNamesArray = lightNames.toArray(lightNamesArray);
+
+                                            Spinner s = (Spinner) getActivity().findViewById(R.id.spinner4);
+                                            ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(),
+                                                    android.R.layout.simple_spinner_item, lightNamesArray);
+                                            s.setAdapter(adapter);
+                                        }
+                                    }, new Response.ErrorListener() {
+                                @Override
+                                public void onErrorResponse(VolleyError error) {
+                                    ACRA.getErrorReporter().handleSilentException(error);
+                                    //handler.postDelayed(decrementLight, lightInterval);
+                                }
+                            });
+
+                            queue.add(lightsRequest);
+                            //handler.post(decrementLight);
+                        } catch (JSONException e) {
+
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                ACRA.getErrorReporter().handleSilentException(error);
+            }
+        });
+
+        queue.add(hueRequest);
+
+    }
 }

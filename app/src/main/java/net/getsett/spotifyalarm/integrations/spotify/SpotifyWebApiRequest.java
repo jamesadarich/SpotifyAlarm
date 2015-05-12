@@ -1,4 +1,4 @@
-package net.getsett.spotifyalarm;
+package net.getsett.spotifyalarm.integrations.spotify;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Response;

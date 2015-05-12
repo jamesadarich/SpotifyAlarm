@@ -6,31 +6,20 @@ import android.app.ActionBar;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
-import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.support.v4.widget.DrawerLayout;
-import android.widget.ArrayAdapter;
-import android.widget.ProgressBar;
-import android.widget.SeekBar;
-import android.widget.TextView;
-
-import com.spotify.sdk.android.authentication.AuthenticationClient;
-import com.spotify.sdk.android.authentication.AuthenticationResponse;
 
 
 public class SleepActivity extends Activity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks,
-        AlarmEditFragment.OnFragmentInteractionListener,
-        GoToSleepFragment.OnFragmentInteractionListener
+        SunriseEditFragment.OnFragmentInteractionListener,
+        StartSunsetFragment.OnFragmentInteractionListener
 {
 
     public void onFragmentInteraction(Uri uri){
@@ -78,12 +67,12 @@ public class SleepActivity extends Activity
         FragmentTransaction transaction = fm.beginTransaction();
         switch (number) {
             case 1:
-                fragment = new GoToSleepFragment();
+                fragment = new StartSunsetFragment();
                 transaction.replace(R.id.container, fragment);
                 transaction.commit();
                 break;
             case 2:
-                fragment = new AlarmEditFragment();
+                fragment = new SunriseEditFragment();
                 mTitle = getString(R.string.title_section2);
                 transaction.replace(R.id.container, fragment);
                 transaction.commit();

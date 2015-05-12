@@ -1,9 +1,8 @@
-package net.getsett.spotifyalarm;
+package net.getsett.spotifyalarm.dataaccess;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
+import net.getsett.spotifyalarm.models.Alarm;
+
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Created by James on 16/01/2015.
