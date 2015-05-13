@@ -59,31 +59,31 @@ public class StartSunsetFragment extends Fragment
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 
-        if (getActivity().findViewById(R.id.switch1) == buttonView) {
-            getActivity().findViewById(R.id.spinner).setEnabled(isChecked);
-            getActivity().findViewById(R.id.switch5).setEnabled(isChecked);
+        if (getActivity().findViewById(R.id.playlistSwitch) == buttonView) {
+            getActivity().findViewById(R.id.playlistSelect).setEnabled(isChecked);
+            getActivity().findViewById(R.id.playlistRandomise).setEnabled(isChecked);
         }
-        else if (getActivity().findViewById(R.id.switch2) == buttonView) {
-            getActivity().findViewById(R.id.spinner3).setEnabled(isChecked);
+        else if (getActivity().findViewById(R.id.lightSwitch) == buttonView) {
+            getActivity().findViewById(R.id.lightSelect).setEnabled(isChecked);
         }
         //whatever you want
     }
 
     @Override
     public void onClick(View v) {
-        if (getActivity().findViewById(R.id.button5) == v){
+        if (getActivity().findViewById(R.id.sunsetStartButton) == v){
 
             Options options = new Options();
-            options.TimeToSunset = ((SeekBar)getActivity().findViewById(R.id.seekBar4)).getProgress() + 1;
+            options.TimeToSunset = ((SeekBar)getActivity().findViewById(R.id.easePeriod)).getProgress() + 1;
 
             //If audio is requested by the user then get the details
-            if (((Switch)getActivity().findViewById(R.id.switch1)).isChecked()) {
+            if (((Switch)getActivity().findViewById(R.id.playlistSwitch)).isChecked()) {
 
                 options.SpotifyOptions = new SpotifyOptions();
                 options.SpotifyOptions.Token = _spotifyToken;
-                options.SpotifyOptions.Randomise = ((Switch)getActivity().findViewById(R.id.switch5)).isChecked();
+                options.SpotifyOptions.Randomise = ((Switch)getActivity().findViewById(R.id.playlistRandomise)).isChecked();
 
-                Spinner s = (Spinner) getActivity().findViewById(R.id.spinner);
+                Spinner s = (Spinner) getActivity().findViewById(R.id.playlistSelect);
                 try {
                     options.SpotifyOptions.PlaylistUri = _spotifyPlaylists.getJSONObject((int) s.getSelectedItemId()).get("uri").toString();
                 } catch (JSONException exception) {
@@ -91,11 +91,11 @@ public class StartSunsetFragment extends Fragment
                 }
             }
 
-            if (((Switch)getActivity().findViewById(R.id.switch2)).isChecked()) {
+            if (((Switch)getActivity().findViewById(R.id.lightSwitch)).isChecked()) {
 
                 options.HueOptions = new HueOptions();
 
-                Spinner s = (Spinner) getActivity().findViewById(R.id.spinner3);
+                Spinner s = (Spinner) getActivity().findViewById(R.id.lightSelect);
 
                 options.HueOptions.LightBulbId =  _lights.get(s.getSelectedItem().toString());
             }
@@ -156,15 +156,15 @@ public class StartSunsetFragment extends Fragment
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_go_to_sleep, container, false);
+        View view = inflater.inflate(R.layout.fragment_start_sunset, container, false);
 
-        view.findViewById(R.id.button5).setOnClickListener(this);
-        ((Switch)view.findViewById(R.id.switch1)).setOnCheckedChangeListener(this);
-        ((Switch)view.findViewById(R.id.switch2)).setOnCheckedChangeListener(this);
+        view.findViewById(R.id.sunsetStartButton).setOnClickListener(this);
+        ((Switch)view.findViewById(R.id.lightSwitch)).setOnCheckedChangeListener(this);
+        ((Switch)view.findViewById(R.id.playlistSwitch)).setOnCheckedChangeListener(this);
 
-        SeekBar sk =(SeekBar) view.findViewById(R.id.seekBar4);
+        SeekBar sk =(SeekBar) view.findViewById(R.id.easePeriod);
 
-        final TextView seekBarValue = (TextView)view.findViewById(R.id.textView5);
+        final TextView seekBarValue = (TextView)view.findViewById(R.id.easePeriodText);
 
         sk.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
 
@@ -279,7 +279,7 @@ public class StartSunsetFragment extends Fragment
                                             String[] lightNamesArray = new String[lightNames.size()];
                                             lightNamesArray = lightNames.toArray(lightNamesArray);
 
-                                            Spinner s = (Spinner) getActivity().findViewById(R.id.spinner3);
+                                            Spinner s = (Spinner) getActivity().findViewById(R.id.lightSelect);
                                             ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(),
                                                     android.R.layout.simple_spinner_item, lightNamesArray);
                                             s.setAdapter(adapter);
@@ -386,7 +386,7 @@ public class StartSunsetFragment extends Fragment
                             String[] playlistNamesArray = new String[playlistNames.size()];
                             playlistNamesArray = playlistNames.toArray(playlistNamesArray);
 
-                            Spinner s = (Spinner) getActivity().findViewById(R.id.spinner);
+                            Spinner s = (Spinner) getActivity().findViewById(R.id.playlistSelect);
                             ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(),
                                     android.R.layout.simple_spinner_item, playlistNamesArray);
                             s.setAdapter(adapter);

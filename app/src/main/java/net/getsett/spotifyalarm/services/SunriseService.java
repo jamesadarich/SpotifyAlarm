@@ -119,6 +119,7 @@ public class SunriseService extends IntentService {
 
             int brightness = lightBulb.getBrightness();
             while (brightness < 255) {
+                brightness++;
                 double progress = (double) brightness / 255.0;
                 int progressPercent = (int) Math.floor(progress * 100);
                 publishProgress(progressPercent);
@@ -129,7 +130,6 @@ public class SunriseService extends IntentService {
                 catch (InterruptedException exception){
 
                 }
-                brightness++;
                 lightBulb.setBrightness(brightness);
 
                 //Adjust the spotify volume

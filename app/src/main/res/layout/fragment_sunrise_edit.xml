@@ -18,20 +18,20 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:text="0 Minutes"
-                android:id="@+id/textView4"
+                android:id="@+id/easePeriodText"
                 android:layout_centerHorizontal="true"
                 android:textAlignment="center" />
     <SeekBar
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/seekBar3"
+        android:id="@+id/easePeriod"
         android:max="99" />
 
 
             <TimePicker
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/timePicker2" />
+                android:id="@+id/timeSelect" />
 
 
 
@@ -40,31 +40,31 @@
         android:layout_height="wrap_content"
         android:text="Audio"
         android:checked="true"
-        android:id="@+id/switch3"/>
+        android:id="@+id/playlistSwitch"/>
     <Spinner
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/spinner2" />
+        android:id="@+id/playlistSelect" />
     <Switch
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="Randomise"
-        android:id="@+id/switch6"/>
+        android:id="@+id/playlistRandomise"/>
     <Switch
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:checked="true"
         android:text="Lights"
-        android:id="@+id/switch4" />
+        android:id="@+id/lightSwitch" />
     <Spinner
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/spinner4" />
+        android:id="@+id/lightSelect" />
     <Button
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="Set!"
-        android:id="@+id/button4" />
+        android:id="@+id/setAlarmButton" />
     </LinearLayout>
     </ScrollView>
 

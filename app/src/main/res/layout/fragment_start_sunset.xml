@@ -11,12 +11,12 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="1 Minute"
-        android:id="@+id/textView5"
+        android:id="@+id/easePeriodText"
         android:layout_centerHorizontal="true" />
     <SeekBar
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/seekBar4"
+        android:id="@+id/easePeriod"
         android:indeterminate="false"
         android:max="99" />
 
@@ -25,37 +25,37 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="Audio"
-        android:id="@+id/switch1"
+        android:id="@+id/playlistSwitch"
         android:checked="true"
         android:theme="@style/AppTheme" />
     <Spinner
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/spinner" />
+        android:id="@+id/playlistSelect" />
 
     <Switch
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="Randomise"
-        android:id="@+id/switch5" />
+        android:id="@+id/playlistRandomise" />
 
     <Switch
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="Lights"
         android:checked="true"
-        android:id="@+id/switch2"/>
+        android:id="@+id/lightSwitch"/>
 
     <Spinner
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/spinner3" />
+        android:id="@+id/lightSelect" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Go To Sleep"
-        android:id="@+id/button5"
+        android:id="@+id/sunsetStartButton"
         android:layout_centerHorizontal="true" />
 
 </LinearLayout>

@@ -75,30 +75,30 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 
-        if (getActivity().findViewById(R.id.switch3) == buttonView) {
-            getActivity().findViewById(R.id.spinner2).setEnabled(isChecked);
-            getActivity().findViewById(R.id.switch6).setEnabled(isChecked);
+        if (getActivity().findViewById(R.id.playlistSwitch) == buttonView) {
+            getActivity().findViewById(R.id.playlistSelect).setEnabled(isChecked);
+            getActivity().findViewById(R.id.playlistRandomise).setEnabled(isChecked);
         }
-        else if (getActivity().findViewById(R.id.switch4) == buttonView) {
-            getActivity().findViewById(R.id.spinner4).setEnabled(isChecked);
+        else if (getActivity().findViewById(R.id.lightSwitch) == buttonView) {
+            getActivity().findViewById(R.id.lightSelect).setEnabled(isChecked);
         }
         //whatever you want
     }
 
     @Override
     public void onClick(View v) {
-        if (getActivity().findViewById(R.id.button4) == v){
+        if (getActivity().findViewById(R.id.setAlarmButton) == v){
 
             Context context = getActivity().getApplicationContext();
             Intent intent = new Intent(context, AlarmBroadcastReceiver.class);
 
 
-            SeekBar seekBar = (SeekBar)getActivity().findViewById(R.id.seekBar3);
+            SeekBar seekBar = (SeekBar)getActivity().findViewById(R.id.easePeriod);
 
 
             AlarmManager alarms ;
             alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            TimePicker time = (TimePicker)getActivity().findViewById(R.id.timePicker2);
+            TimePicker time = (TimePicker)getActivity().findViewById(R.id.timeSelect);
             Calendar calendar = Calendar.getInstance();
 
             calendar.set(Calendar.HOUR_OF_DAY, time.getCurrentHour());
@@ -119,13 +119,13 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
             options.TimeToSunset = seekBar.getProgress() + 1;
 
             //If audio is requested by the user then get the details
-            if (((Switch)getActivity().findViewById(R.id.switch3)).isChecked()) {
+            if (((Switch)getActivity().findViewById(R.id.playlistSwitch)).isChecked()) {
 
                 options.SpotifyOptions = new SpotifyOptions();
                 options.SpotifyOptions.Token = _spotifyToken;
-                options.SpotifyOptions.Randomise = ((Switch)getActivity().findViewById(R.id.switch6)).isChecked();
+                options.SpotifyOptions.Randomise = ((Switch)getActivity().findViewById(R.id.playlistRandomise)).isChecked();
 
-                Spinner s = (Spinner) getActivity().findViewById(R.id.spinner2);
+                Spinner s = (Spinner) getActivity().findViewById(R.id.playlistSelect);
                 try {
                     options.SpotifyOptions.PlaylistUri = _spotifyPlaylists.getJSONObject((int) s.getSelectedItemId()).get("uri").toString();
                 } catch (JSONException exception) {
@@ -133,11 +133,11 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
                 }
             }
 
-            if (((Switch)getActivity().findViewById(R.id.switch4)).isChecked()) {
+            if (((Switch)getActivity().findViewById(R.id.lightSwitch)).isChecked()) {
 
                 options.HueOptions = new HueOptions();
 
-                Spinner s = (Spinner) getActivity().findViewById(R.id.spinner4);
+                Spinner s = (Spinner) getActivity().findViewById(R.id.lightSelect);
 
                 options.HueOptions.LightBulbId =  _lights.get(s.getSelectedItem().toString());
             }
@@ -194,15 +194,15 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_alarm_edit, container, false);
+        View view = inflater.inflate(R.layout.fragment_sunrise_edit, container, false);
 
-        view.findViewById(R.id.button4).setOnClickListener(this);
-        ((Switch)view.findViewById(R.id.switch3)).setOnCheckedChangeListener(this);
-        ((Switch)view.findViewById(R.id.switch4)).setOnCheckedChangeListener(this);
+        view.findViewById(R.id.setAlarmButton).setOnClickListener(this);
+        ((Switch)view.findViewById(R.id.playlistSwitch)).setOnCheckedChangeListener(this);
+        ((Switch)view.findViewById(R.id.lightSwitch)).setOnCheckedChangeListener(this);
 
-        SeekBar sk =(SeekBar) view.findViewById(R.id.seekBar3);
+        SeekBar sk =(SeekBar) view.findViewById(R.id.easePeriod);
 
-        final TextView seekBarValue = (TextView)view.findViewById(R.id.textView4);
+        final TextView seekBarValue = (TextView)view.findViewById(R.id.easePeriodText);
 
         sk.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
 
@@ -358,7 +358,7 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
                             String[] playlistNamesArray = new String[playlistNames.size()];
                             playlistNamesArray = playlistNames.toArray(playlistNamesArray);
 
-                            Spinner s = (Spinner) getActivity().findViewById(R.id.spinner2);
+                            Spinner s = (Spinner) getActivity().findViewById(R.id.playlistSelect);
                             ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(),
                                     android.R.layout.simple_spinner_item, playlistNamesArray);
                             s.setAdapter(adapter);
@@ -412,7 +412,7 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
                                             String[] lightNamesArray = new String[lightNames.size()];
                                             lightNamesArray = lightNames.toArray(lightNamesArray);
 
-                                            Spinner s = (Spinner) getActivity().findViewById(R.id.spinner4);
+                                            Spinner s = (Spinner) getActivity().findViewById(R.id.lightSelect);
                                             ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(),
                                                     android.R.layout.simple_spinner_item, lightNamesArray);
                                             s.setAdapter(adapter);
