@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.Switch;
@@ -60,7 +61,7 @@ import java.util.Map;
  * create an instance of this fragment.
  */
 public class SunriseEditFragment extends Fragment
-implements View.OnClickListener {
+implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
 
     private JSONArray _spotifyPlaylists;
 
@@ -70,6 +71,19 @@ implements View.OnClickListener {
     private RequestQueue queue;
     private static final int REQUEST_CODE = 1337;
     private Map<String, Integer> _lights = new HashMap<String, Integer>();
+
+    @Override
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+        if (getActivity().findViewById(R.id.switch3) == buttonView) {
+            getActivity().findViewById(R.id.spinner2).setEnabled(isChecked);
+            getActivity().findViewById(R.id.switch6).setEnabled(isChecked);
+        }
+        else if (getActivity().findViewById(R.id.switch4) == buttonView) {
+            getActivity().findViewById(R.id.spinner4).setEnabled(isChecked);
+        }
+        //whatever you want
+    }
 
     @Override
     public void onClick(View v) {
@@ -96,19 +110,20 @@ implements View.OnClickListener {
             }
 
             Alarm alarm = new Alarm();
-            alarm.setLightFadeTimeInMinutes(seekBar.getProgress());
+            alarm.setLightFadeTimeInMinutes(seekBar.getProgress() + 1);
             alarm.setTime(calendar.getTime());
 
             new AlarmRepository().add(alarm);
 
             Options options = new Options();
-            options.TimeToSunset = seekBar.getProgress();
+            options.TimeToSunset = seekBar.getProgress() + 1;
 
             //If audio is requested by the user then get the details
             if (((Switch)getActivity().findViewById(R.id.switch3)).isChecked()) {
 
                 options.SpotifyOptions = new SpotifyOptions();
                 options.SpotifyOptions.Token = _spotifyToken;
+                options.SpotifyOptions.Randomise = ((Switch)getActivity().findViewById(R.id.switch6)).isChecked();
 
                 Spinner s = (Spinner) getActivity().findViewById(R.id.spinner2);
                 try {
@@ -182,6 +197,8 @@ implements View.OnClickListener {
         View view = inflater.inflate(R.layout.fragment_alarm_edit, container, false);
 
         view.findViewById(R.id.button4).setOnClickListener(this);
+        ((Switch)view.findViewById(R.id.switch3)).setOnCheckedChangeListener(this);
+        ((Switch)view.findViewById(R.id.switch4)).setOnCheckedChangeListener(this);
 
         SeekBar sk =(SeekBar) view.findViewById(R.id.seekBar3);
 
@@ -193,7 +210,11 @@ implements View.OnClickListener {
             public void onProgressChanged(SeekBar seekBar, int progress,
                                           boolean fromUser) {
                 // TODO Auto-generated method stub
-                seekBarValue.setText(String.valueOf(progress) + " Minutes");
+                String seekBarText = String.valueOf(progress + 1) + " minute";
+                if (progress != 1){
+                    seekBarText += "s";
+                }
+                seekBarValue.setText(seekBarText);
             }
 
             @Override

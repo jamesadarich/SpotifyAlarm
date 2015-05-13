@@ -1,66 +1,61 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" tools:context="net.getsett.spotifyalarm.GoToSleep">
+    android:layout_height="match_parent" tools:context="net.getsett.spotifyalarm.GoToSleep"
+    android:orientation="vertical">
 
     <!-- TODO: Update blank fragment layout -->
 
+
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="1 Minute"
+        android:id="@+id/textView5"
+        android:layout_centerHorizontal="true" />
     <SeekBar
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:id="@+id/seekBar4"
-        android:layout_below="@+id/textView5"
-        android:layout_alignParentStart="true"
-        android:indeterminate="false" />
+        android:indeterminate="false"
+        android:max="99" />
+
+
+    <Switch
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Audio"
+        android:id="@+id/switch1"
+        android:checked="true"
+        android:theme="@style/AppTheme" />
+    <Spinner
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/spinner" />
+
+    <Switch
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Randomise"
+        android:id="@+id/switch5" />
+
+    <Switch
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Lights"
+        android:checked="true"
+        android:id="@+id/switch2"/>
+
+    <Spinner
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/spinner3" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Go To Sleep"
         android:id="@+id/button5"
-        android:layout_below="@+id/seekBar4"
         android:layout_centerHorizontal="true" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="0 Minutes"
-        android:id="@+id/textView5"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="16dp" />
-
-    <Spinner
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/spinner"
-        android:layout_below="@+id/switch1"
-        android:layout_alignParentStart="true" />
-
-    <Switch
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Audio"
-        android:id="@+id/switch1"
-        android:checked="false"
-        android:theme="@style/AppTheme"
-        android:layout_below="@+id/button5"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true" />
-
-    <Switch
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Lights"
-        android:id="@+id/switch2"
-        android:layout_below="@+id/spinner"
-        android:layout_alignStart="@+id/switch1"
-        android:layout_alignParentEnd="true" />
-
-    <Spinner
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/spinner3"
-        android:layout_below="@+id/switch2"
-        android:layout_alignParentStart="true" />
-
-</RelativeLayout>
+</LinearLayout>

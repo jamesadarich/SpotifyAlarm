@@ -24,7 +24,8 @@
     <SeekBar
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/seekBar3" />
+        android:id="@+id/seekBar3"
+        android:max="99" />
 
 
             <TimePicker
@@ -38,16 +39,21 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="Audio"
+        android:checked="true"
         android:id="@+id/switch3"/>
     <Spinner
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:id="@+id/spinner2" />
-
-
     <Switch
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:text="Randomise"
+        android:id="@+id/switch6"/>
+    <Switch
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:checked="true"
         android:text="Lights"
         android:id="@+id/switch4" />
     <Spinner

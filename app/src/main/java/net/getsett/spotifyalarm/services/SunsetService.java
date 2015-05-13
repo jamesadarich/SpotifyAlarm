@@ -66,7 +66,14 @@ public class SunsetService extends IntentService {
                 public void onInitialized(Player player) {
                     //_player.addConnectionStateCallback();
                     //_player.addPlayerNotificationCallback();
+                    _player.setShuffle(_options.SpotifyOptions.Randomise);
+                    _player.setRepeat(true);
                     _player.play(_options.SpotifyOptions.PlaylistUri);
+
+                    //bug in player means first track is always first in playlist so skip if random
+                    if (_options.SpotifyOptions.Randomise){
+                        _player.skipToNext();
+                    }
                     //handler.postDelayed(decrementLight, lightInterval);
                 }
 

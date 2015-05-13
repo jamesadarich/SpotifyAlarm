@@ -61,6 +61,7 @@ public class StartSunsetFragment extends Fragment
 
         if (getActivity().findViewById(R.id.switch1) == buttonView) {
             getActivity().findViewById(R.id.spinner).setEnabled(isChecked);
+            getActivity().findViewById(R.id.switch5).setEnabled(isChecked);
         }
         else if (getActivity().findViewById(R.id.switch2) == buttonView) {
             getActivity().findViewById(R.id.spinner3).setEnabled(isChecked);
@@ -73,13 +74,14 @@ public class StartSunsetFragment extends Fragment
         if (getActivity().findViewById(R.id.button5) == v){
 
             Options options = new Options();
-            options.TimeToSunset = ((SeekBar)getActivity().findViewById(R.id.seekBar4)).getProgress();
+            options.TimeToSunset = ((SeekBar)getActivity().findViewById(R.id.seekBar4)).getProgress() + 1;
 
             //If audio is requested by the user then get the details
             if (((Switch)getActivity().findViewById(R.id.switch1)).isChecked()) {
 
                 options.SpotifyOptions = new SpotifyOptions();
                 options.SpotifyOptions.Token = _spotifyToken;
+                options.SpotifyOptions.Randomise = ((Switch)getActivity().findViewById(R.id.switch5)).isChecked();
 
                 Spinner s = (Spinner) getActivity().findViewById(R.id.spinner);
                 try {
@@ -170,7 +172,11 @@ public class StartSunsetFragment extends Fragment
             public void onProgressChanged(SeekBar seekBar, int progress,
                                           boolean fromUser) {
                 // TODO Auto-generated method stub
-                seekBarValue.setText(String.valueOf(progress) + " minutes");
+                String seekBarText = String.valueOf(progress + 1) + " minute";
+                if (progress != 1){
+                    seekBarText += "s";
+                }
+                seekBarValue.setText(seekBarText);
             }
 
             @Override
