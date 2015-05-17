@@ -25,13 +25,13 @@ import java.util.concurrent.TimeoutException;
 /**
  * Created by James on 10/05/2015.
  */
-public class Bridge {
+public class HueBridge {
 
     private RequestQueue _requestQueue;
     private Context _context;
     private String _cachedApiUrl;
 
-    public Bridge(Context context){
+    public HueBridge(Context context){
         _requestQueue = Volley.newRequestQueue(context.getApplicationContext());
         _context = context;
     }
@@ -77,7 +77,7 @@ public class Bridge {
         return null;
     }
 
-    public List<LightBulb> getAllLightBulbs(){
+    public List<HueLightBulb> getAllLightBulbs(){
 
         String url = getApiUrl() + "/" + getUsername() + "/lights";
 
@@ -93,10 +93,15 @@ public class Bridge {
         try {
             JSONObject response = futureGetLightBulbs.get(30, TimeUnit.SECONDS);
             Iterator<String> keys = response.keys();
-            List<LightBulb> lightBulbs = new ArrayList<LightBulb>();
+            List<HueLightBulb> lightBulbs = new ArrayList<HueLightBulb>();
             while(keys.hasNext()) {
-                String key = keys.next();
-                lightBulbs.add(new LightBulb(Integer.parseInt(key), this));
+                Integer key = Integer.parseInt(keys.next());
+                try {
+                    lightBulbs.add(new HueLightBulb(key, response.getJSONObject(key.toString()).getString("name"), this));
+                }
+                catch (JSONException exception){
+
+                }
             }
             return lightBulbs;
         }
@@ -113,7 +118,7 @@ public class Bridge {
         return null;
     }
 
-    public LightBulb getLightBulbById(int id){
+    public HueLightBulb getLightBulbById(int id){
         String url = getApiUrl() + "/" + getUsername() + "/lights/" + id;
 
         RequestFuture<JSONObject> futureGetLightBulbs = RequestFuture.newFuture();
@@ -127,7 +132,7 @@ public class Bridge {
         _requestQueue.add(getLightBulbs);
         try {
             JSONObject response = futureGetLightBulbs.get(30, TimeUnit.SECONDS);
-            return new LightBulb(id, this);
+            return new HueLightBulb(id, response.getString("name"), this);
         }
         catch (TimeoutException exception) {
             ACRA.getErrorReporter().handleSilentException(exception);
@@ -137,6 +142,9 @@ public class Bridge {
         }
         catch (ExecutionException exception) {
             ACRA.getErrorReporter().handleSilentException(exception);
+        }
+        catch (JSONException exception){
+
         }
 
         return null;

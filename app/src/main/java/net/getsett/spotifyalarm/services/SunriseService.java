@@ -15,16 +15,14 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.Volley;
 import com.spotify.sdk.android.player.Config;
-import com.spotify.sdk.android.player.PlayConfig;
 import com.spotify.sdk.android.player.Player;
 import com.spotify.sdk.android.player.Spotify;
 
-import net.getsett.spotifyalarm.PhillipsHueBridge;
 import net.getsett.spotifyalarm.R;
-import net.getsett.spotifyalarm.integrations.philipshue.Bridge;
-import net.getsett.spotifyalarm.integrations.philipshue.LightBulb;
+import net.getsett.spotifyalarm.integrations.philipshue.HueBridge;
+import net.getsett.spotifyalarm.integrations.philipshue.HueLightBulb;
+import net.getsett.spotifyalarm.integrations.spotify.SpotifyTokenGenerator;
 import net.getsett.spotifyalarm.models.Options;
 import net.getsett.spotifyalarm.volleyextensions.RestJsonArrayRequest;
 
@@ -43,7 +41,6 @@ import org.json.JSONObject;
 public class SunriseService extends IntentService {
     public SunriseService() {
         super("Sunrise Service");
-        handler = new Handler();
     }
 
     private String _spotifyUri;
@@ -73,7 +70,9 @@ public class SunriseService extends IntentService {
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0);
 
         if (_options.SpotifyOptions != null) {
-            Config playerConfig = new Config(this, _options.SpotifyOptions.Token, getString(R.string.spotifyApiKey));
+            SpotifyTokenGenerator generator = new SpotifyTokenGenerator(this);
+            String token = generator.refreshToken(_options.SpotifyOptions.RefreshToken).toString();
+            Config playerConfig = new Config(this, token, getString(R.string.spotifyApiKey));
             _player = Spotify.getPlayer(playerConfig, this, new Player.InitializationObserver() {
                 @Override
                 public void onInitialized(Player player) {
@@ -105,13 +104,13 @@ public class SunriseService extends IntentService {
         new SunsetTask().execute();
     }
 
-    private class SunsetTask extends AsyncTask<Void, Integer, Void> {
+        private class SunsetTask extends AsyncTask<Void, Integer, Void> {
         /** The system calls this to perform work in a worker thread and
          * delivers it the parameters given to AsyncTask.execute() */
         protected Void doInBackground(Void... nothing) {
             //loadImageFromNetwork(urls[0]);
-            Bridge bridge = new Bridge(getApplicationContext());
-            LightBulb lightBulb = bridge.getLightBulbById(_options.HueOptions.LightBulbId);
+            HueBridge bridge = new HueBridge(getApplicationContext());
+            HueLightBulb lightBulb = bridge.getLightBulbById(_options.HueOptions.LightBulbId);
 
             //Initially set the brightness to 0
             lightBulb.setBrightness(0);
@@ -174,118 +173,8 @@ public class SunriseService extends IntentService {
         }
     }
 
-    private PhillipsHueBridge _lightBridge;
-    private Handler handler;
-    private int _brightness = 0;
-    private RequestQueue queue;
-    private int lightInterval;
     private NotificationManager mNotifyManager;
     private NotificationCompat.Builder mBuilder;
     private int notifyId = 1;
     private PowerManager.WakeLock wakeLock;
-    private String _ipAddress;
-    private String _username;
-
-    private Runnable decrementLight = new Runnable(){
-        public void run()
-        {
-            String url = "http://" + _ipAddress + "/api/" + _username + "/lights/1/state";
-
-            JSONObject body = new JSONObject();
-
-            try {
-                if (_brightness > 0){
-                    body.put("on", true);
-                }
-                else {
-                    body.put("on", false);
-                }
-                body.put("bri", _brightness);
-            }
-            catch(JSONException ex){
-
-            }
-
-            RestJsonArrayRequest request = new RestJsonArrayRequest(Request.Method.PUT, url, body.toString(),
-                    new Response.Listener<JSONArray>() {
-                        @Override
-                        public void onResponse(JSONArray response) {
-
-                            if (_brightness < 255) {
-
-                                int progress = (int) Math.floor((((double) _brightness) / 255.0) * 100);
-                                mBuilder.setProgress(100, progress, false);
-                                // Displays the progress bar for the first time.
-                                mNotifyManager.notify(notifyId, mBuilder.build());
-
-                                _brightness++;
-
-
-                                //Adjust the spotify volume
-                                if (_brightness > 25) {
-
-                                    _player.resume();
-                                    AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-                                    int volumeindex = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-                                    volumeindex = volumeindex * _brightness;
-                                    volumeindex = volumeindex / 255;
-                                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volumeindex, 0);
-                                }
-
-                                handler.postDelayed(decrementLight, lightInterval);
-                            }
-                            else if (_brightness < 25){
-                                _player.pause();
-                                Spotify.destroyPlayer(this);
-
-                                //Return the volume to where it should be
-                            }
-                            else
-                            {
-
-                                // When the loop is finished, updates the notification
-                                mBuilder.setContentText("Sunrise")
-                                        // Removes the progress bar
-                                        .setProgress(0,0,false);
-                                mNotifyManager.notify(notifyId, mBuilder.build());
-                                wakeLock.release();
-
-                            }
-                        }
-                    }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    ACRA.getErrorReporter().handleSilentException(error);
-                    handler.postDelayed(decrementLight, lightInterval);
-                }
-            });
-            // Add the request to the RequestQueue.
-            queue.add(request);
-        }
-    };
-    public Runnable setUp = new Runnable(){
-        public void run() {
-            JsonArrayRequest request = new JsonArrayRequest("https://www.meethue.com/api/nupnp",
-                    new Response.Listener<JSONArray>() {
-                        @Override
-                        public void onResponse(JSONArray response) {
-                            try {
-                                _ipAddress = ((JSONObject) response.get(0)).get("internalipaddress").toString();
-                                _username = "james-test";
-                                handler.post(decrementLight);
-                            } catch (JSONException e) {
-
-                            }
-
-                        }
-                    }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    ACRA.getErrorReporter().handleSilentException(error);
-                }
-            });
-
-            queue.add(request);
-        }
-    };
 }

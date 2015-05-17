@@ -6,12 +6,12 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.Spinner;
@@ -19,20 +19,23 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
-import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
+import com.spotify.sdk.android.player.Spotify;
 
+import net.getsett.spotifyalarm.adapters.HueLightBulbAdapter;
+import net.getsett.spotifyalarm.adapters.SpotifyPlaylistAdapter;
 import net.getsett.spotifyalarm.broadcastreceivers.AlarmBroadcastReceiver;
 import net.getsett.spotifyalarm.dataaccess.AlarmRepository;
-import net.getsett.spotifyalarm.integrations.spotify.SpotifyWebApiRequest;
+import net.getsett.spotifyalarm.integrations.philipshue.HueBridge;
+import net.getsett.spotifyalarm.integrations.philipshue.HueLightBulb;
+import net.getsett.spotifyalarm.integrations.spotify.SpotifyPlaylist;
+import net.getsett.spotifyalarm.integrations.spotify.SpotifyToken;
+import net.getsett.spotifyalarm.integrations.spotify.SpotifyTokenGenerator;
+import net.getsett.spotifyalarm.integrations.spotify.SpotifyUser;
 import net.getsett.spotifyalarm.models.Alarm;
 import net.getsett.spotifyalarm.models.HueOptions;
 import net.getsett.spotifyalarm.models.Options;
@@ -40,14 +43,10 @@ import net.getsett.spotifyalarm.models.SpotifyOptions;
 
 import org.acra.ACRA;
 import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -67,7 +66,9 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
 
     // TODO: Replace with your redirect URI
     private static final String REDIRECT_URI = "spotify-alarm://callback";
-    private String _spotifyToken = "";
+    private SpotifyTokenGenerator _spotifyTokenGenerator;
+    private String _spotifyCode = "";
+    private SpotifyToken _spotifyToken;
     private RequestQueue queue;
     private static final int REQUEST_CODE = 1337;
     private Map<String, Integer> _lights = new HashMap<String, Integer>();
@@ -122,15 +123,11 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
             if (((Switch)getActivity().findViewById(R.id.playlistSwitch)).isChecked()) {
 
                 options.SpotifyOptions = new SpotifyOptions();
-                options.SpotifyOptions.Token = _spotifyToken;
+                options.SpotifyOptions.RefreshToken = _spotifyToken.getRefreshToken();
                 options.SpotifyOptions.Randomise = ((Switch)getActivity().findViewById(R.id.playlistRandomise)).isChecked();
 
                 Spinner s = (Spinner) getActivity().findViewById(R.id.playlistSelect);
-                try {
-                    options.SpotifyOptions.PlaylistUri = _spotifyPlaylists.getJSONObject((int) s.getSelectedItemId()).get("uri").toString();
-                } catch (JSONException exception) {
-                    ACRA.getErrorReporter().handleSilentException(exception);
-                }
+                options.SpotifyOptions.PlaylistUri = ((SpotifyPlaylist)s.getSelectedItem()).Uri;
             }
 
             if (((Switch)getActivity().findViewById(R.id.lightSwitch)).isChecked()) {
@@ -139,7 +136,7 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
 
                 Spinner s = (Spinner) getActivity().findViewById(R.id.lightSelect);
 
-                options.HueOptions.LightBulbId =  _lights.get(s.getSelectedItem().toString());
+                options.HueOptions.LightBulbId =  ((HueLightBulb)s.getSelectedItem()).getId();
             }
 
             intent.putExtra("options", options);
@@ -245,7 +242,7 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
 
         queue = Volley.newRequestQueue(getActivity().getApplicationContext());
         AuthenticationRequest.Builder builder =
-                new AuthenticationRequest.Builder(getString(R.string.spotifyApiKey), AuthenticationResponse.Type.TOKEN, REDIRECT_URI);
+                new AuthenticationRequest.Builder(getString(R.string.spotifyApiKey), AuthenticationResponse.Type.CODE, REDIRECT_URI);
         builder.setScopes(new String[]{"user-read-private", "streaming"});
         AuthenticationRequest request = builder.build();
 
@@ -262,7 +259,6 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
                     + " must implement OnFragmentInteractionListener");
         }
 
-        GetHueBulbs();
     }
 
     @Override
@@ -272,12 +268,75 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
         // Check if result comes from the correct activity
         if (requestCode == REQUEST_CODE) {
             AuthenticationResponse response = AuthenticationClient.getResponse(resultCode, intent);
-            if (response.getType() == AuthenticationResponse.Type.TOKEN) {
+            if (response.getType() == AuthenticationResponse.Type.CODE) {
 
-                _spotifyToken = response.getAccessToken();
+                _spotifyCode = response.getCode();
+                new SetupPlaylistsTask().execute();
+                new SetupLightsTask().execute();
 
-                getUsername();
             }
+        }
+    }
+
+
+    private class SetupPlaylistsTask extends AsyncTask<Void, Void, List<SpotifyPlaylist>> {
+        /** The system calls this to perform work in a worker thread and
+         * delivers it the parameters given to AsyncTask.execute() */
+        protected List<SpotifyPlaylist> doInBackground(Void... nothing) {
+            //loadImageFromNetwork(urls[0]);
+
+            _spotifyTokenGenerator = new SpotifyTokenGenerator(getActivity());
+            _spotifyToken = _spotifyTokenGenerator.getToken(_spotifyCode);
+            SpotifyUser user = new SpotifyUser(_spotifyToken, getActivity());
+            return user.getPlaylists();
+        }
+
+        protected void onProgressUpdate(Void... progress) {
+        }
+
+        /** The system calls this to perform work in the UI thread and delivers
+         * the result from doInBackground() */
+        protected void onPostExecute(List<SpotifyPlaylist> playlists) {
+            //mImageView.setImageBitmap(result);
+            // When the loop is finished, updates the notification
+
+            Spinner s = (Spinner) getActivity().findViewById(R.id.playlistSelect);
+            SpotifyPlaylist[] playlistsArray = new SpotifyPlaylist[playlists.size()];
+            playlistsArray = playlists.toArray(playlistsArray);
+            SpotifyPlaylistAdapter adapter = new SpotifyPlaylistAdapter(
+                    getActivity(),
+                    playlistsArray
+            );
+            s.setAdapter(adapter);
+        }
+    }
+
+    private class SetupLightsTask extends AsyncTask<Void, Void, List<HueLightBulb>> {
+        /** The system calls this to perform work in a worker thread and
+         * delivers it the parameters given to AsyncTask.execute() */
+        protected List<HueLightBulb> doInBackground(Void... nothing) {
+            //loadImageFromNetwork(urls[0]);
+            HueBridge bridge = new HueBridge(getActivity());
+
+            return bridge.getAllLightBulbs();
+        }
+
+        protected void onProgressUpdate(Void... progress) {
+        }
+
+        /** The system calls this to perform work in the UI thread and delivers
+         * the result from doInBackground() */
+        protected void onPostExecute(List<HueLightBulb> lightBulbs) {
+            //mImageView.setImageBitmap(result);
+            // When the loop is finished, updates the notification
+
+            Spinner s = (Spinner) getActivity().findViewById(R.id.lightSelect);
+            HueLightBulb[] lightsArray = new HueLightBulb[lightBulbs.size()];
+            lightsArray = lightBulbs.toArray(lightsArray);
+            HueLightBulbAdapter adapter = new HueLightBulbAdapter(
+                    getActivity(),
+                    lightsArray);
+            s.setAdapter(adapter);
         }
     }
 
@@ -300,146 +359,5 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         public void onFragmentInteraction(Uri uri);
-    }
-
-    private void getUsername(){
-        //Get the users username
-        JsonObjectRequest usernameRequest = new SpotifyWebApiRequest(
-                Request.Method.GET,
-                "https://api.spotify.com/v1/me",
-                null,
-                _spotifyToken,
-                new Response.Listener<JSONObject>()
-                {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        // display response
-                        //Log.d("Response", response.toString());
-
-                        try {
-                            getUserPlaylists(response.get("id").toString());
-                        }
-                        catch (JSONException exception){
-                            ACRA.getErrorReporter().handleSilentException(exception);
-                        }
-                    }
-                },
-                new Response.ErrorListener()
-                {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        ACRA.getErrorReporter().handleSilentException(error);
-                    }
-                }
-        );
-
-        queue.add(usernameRequest);
-    }
-
-    private void getUserPlaylists(String username){
-        //Get the users username
-        JsonObjectRequest playlistRequest = new SpotifyWebApiRequest(
-                Request.Method.GET,
-                "https://api.spotify.com/v1/users/" + username + "/playlists",
-                null,
-                _spotifyToken,
-                new Response.Listener<JSONObject>()
-                {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        // display response
-                        try {
-                            _spotifyPlaylists = response.getJSONArray("items");
-
-                            List<String> playlistNames = new ArrayList<String>();
-                            for(int i = 0; i < _spotifyPlaylists.length(); i++){
-                                playlistNames.add(_spotifyPlaylists.getJSONObject(i).get("name").toString());
-                            }
-                            String[] playlistNamesArray = new String[playlistNames.size()];
-                            playlistNamesArray = playlistNames.toArray(playlistNamesArray);
-
-                            Spinner s = (Spinner) getActivity().findViewById(R.id.playlistSelect);
-                            ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(),
-                                    android.R.layout.simple_spinner_item, playlistNamesArray);
-                            s.setAdapter(adapter);
-                        }
-                        catch (JSONException exception)
-                        {
-                            ACRA.getErrorReporter().handleSilentException(exception);
-                        }
-                    }
-                },
-                new Response.ErrorListener()
-                {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        ACRA.getErrorReporter().handleSilentException(error);
-                    }
-                }
-        );
-        queue.add(playlistRequest);
-    }
-
-    private void GetHueBulbs(){
-        JsonArrayRequest hueRequest = new JsonArrayRequest("https://www.meethue.com/api/nupnp",
-                new Response.Listener<JSONArray>() {
-                    @Override
-                    public void onResponse(JSONArray response) {
-                        try {
-
-                            String _hueIpAddress = ((JSONObject) response.get(0)).get("internalipaddress").toString();
-                            String _hueUsername = "james-test";
-                            JsonObjectRequest lightsRequest = new JsonObjectRequest(Request.Method.GET,
-                                    "http://" + _hueIpAddress + "/api/" + _hueUsername + "/lights",
-                                    new Response.Listener<JSONObject>() {
-                                        @Override
-                                        public void onResponse(JSONObject response) {
-                                            List<String> lightNames = new ArrayList<String>();
-
-                                            Iterator<String> keys = response.keys();
-                                            while(keys.hasNext()) {
-                                                String key = keys.next();
-
-                                                try {
-                                                    String name = response.getJSONObject(key).getString("name");
-                                                    _lights.put(name, Integer.parseInt(key));
-                                                    lightNames.add(name);
-                                                }
-                                                catch (JSONException ex){
-
-                                                }
-                                            }
-                                            String[] lightNamesArray = new String[lightNames.size()];
-                                            lightNamesArray = lightNames.toArray(lightNamesArray);
-
-                                            Spinner s = (Spinner) getActivity().findViewById(R.id.lightSelect);
-                                            ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(),
-                                                    android.R.layout.simple_spinner_item, lightNamesArray);
-                                            s.setAdapter(adapter);
-                                        }
-                                    }, new Response.ErrorListener() {
-                                @Override
-                                public void onErrorResponse(VolleyError error) {
-                                    ACRA.getErrorReporter().handleSilentException(error);
-                                    //handler.postDelayed(decrementLight, lightInterval);
-                                }
-                            });
-
-                            queue.add(lightsRequest);
-                            //handler.post(decrementLight);
-                        } catch (JSONException e) {
-
-                        }
-
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                ACRA.getErrorReporter().handleSilentException(error);
-            }
-        });
-
-        queue.add(hueRequest);
-
     }
 }

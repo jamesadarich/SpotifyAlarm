@@ -10,4 +10,5 @@ public class SpotifyOptions implements Serializable {
     public boolean Randomise;
     public String PlaylistUri;
     public String Token;
+    public String RefreshToken;
 }

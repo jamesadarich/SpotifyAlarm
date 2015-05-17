@@ -4,7 +4,6 @@ import com.android.volley.Request;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.RequestFuture;
 
-import net.getsett.spotifyalarm.R;
 import net.getsett.spotifyalarm.volleyextensions.RestJsonArrayRequest;
 
 import org.acra.ACRA;
@@ -19,19 +18,25 @@ import java.util.concurrent.TimeoutException;
 /**
  * Created by James on 10/05/2015.
  */
-public class LightBulb {
+public class HueLightBulb {
 
     private final int _id;
-    private final Bridge _bridge;
+    private final HueBridge _bridge;
+    private final String _name;
     public static final int MAX_BRIGHTNESS = 255;
 
-    public LightBulb(int id, Bridge bridge){
+    public HueLightBulb(int id, String name, HueBridge bridge){
         _id = id;
+        _name = name;
         _bridge = bridge;
     }
 
     public int getId(){
         return _id;
+    }
+
+    public String getName() {
+        return _name;
     }
 
     public void setBrightness(int brightness){

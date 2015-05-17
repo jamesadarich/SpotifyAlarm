@@ -5,15 +5,14 @@ import android.content.Intent;
 import android.content.Context;
 import android.media.AudioManager;
 import android.os.AsyncTask;
-import android.os.Handler;
 import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
 import com.spotify.sdk.android.player.Config;
 import com.spotify.sdk.android.player.Player;
 import com.spotify.sdk.android.player.Spotify;
 import net.getsett.spotifyalarm.R;
-import net.getsett.spotifyalarm.integrations.philipshue.Bridge;
-import net.getsett.spotifyalarm.integrations.philipshue.LightBulb;
+import net.getsett.spotifyalarm.integrations.philipshue.HueBridge;
+import net.getsett.spotifyalarm.integrations.philipshue.HueLightBulb;
 import net.getsett.spotifyalarm.models.Options;
 
 /**
@@ -92,8 +91,8 @@ public class SunsetService extends IntentService {
          * delivers it the parameters given to AsyncTask.execute() */
         protected Void doInBackground(Void... nothing) {
             //loadImageFromNetwork(urls[0]);
-            Bridge bridge = new Bridge(getApplicationContext());
-            LightBulb lightBulb = bridge.getLightBulbById(_options.HueOptions.LightBulbId);
+            HueBridge bridge = new HueBridge(getApplicationContext());
+            HueLightBulb lightBulb = bridge.getLightBulbById(_options.HueOptions.LightBulbId);
 
 
             int brightness = lightBulb.getBrightness();
