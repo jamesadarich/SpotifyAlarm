@@ -1,4 +1,4 @@
-package net.getsett.spotifyalarm;
+package net.getsett.spotifyalarm.fagments;
 
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -25,8 +25,8 @@ import com.android.volley.toolbox.Volley;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
-import com.spotify.sdk.android.player.Spotify;
 
+import net.getsett.spotifyalarm.R;
 import net.getsett.spotifyalarm.adapters.HueLightBulbAdapter;
 import net.getsett.spotifyalarm.adapters.SpotifyPlaylistAdapter;
 import net.getsett.spotifyalarm.broadcastreceivers.AlarmBroadcastReceiver;
@@ -42,7 +42,6 @@ import net.getsett.spotifyalarm.models.HueOptions;
 import net.getsett.spotifyalarm.models.Options;
 import net.getsett.spotifyalarm.models.SpotifyOptions;
 
-import org.acra.ACRA;
 import org.json.JSONArray;
 
 import java.util.Calendar;

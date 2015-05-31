@@ -29,7 +29,7 @@
             android:label="@string/title_activity_alarm_list" >
         </activity>
         <activity
-            android:name=".SleepActivity"
+            android:name=".activities.SleepActivity"
             android:label="@string/title_activity_sleep" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

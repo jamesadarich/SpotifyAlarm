@@ -1,4 +1,4 @@
-package net.getsett.spotifyalarm;
+package net.getsett.spotifyalarm.activities;
 
 import android.app.Activity;
 
@@ -14,6 +14,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.support.v4.widget.DrawerLayout;
+
+import net.getsett.spotifyalarm.fagments.NavigationDrawerFragment;
+import net.getsett.spotifyalarm.R;
+import net.getsett.spotifyalarm.fagments.StartSunsetFragment;
+import net.getsett.spotifyalarm.fagments.SunriseEditFragment;
 
 
 public class SleepActivity extends Activity

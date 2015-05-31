@@ -1,4 +1,4 @@
-package net.getsett.spotifyalarm;
+package net.getsett.spotifyalarm.fagments;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -9,7 +9,6 @@ import android.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.Spinner;
@@ -17,17 +16,13 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
 
+import net.getsett.spotifyalarm.R;
 import net.getsett.spotifyalarm.adapters.HueLightBulbAdapter;
 import net.getsett.spotifyalarm.adapters.SpotifyPlaylistAdapter;
 import net.getsett.spotifyalarm.integrations.philipshue.HueBridge;
@@ -36,20 +31,12 @@ import net.getsett.spotifyalarm.integrations.spotify.SpotifyPlaylist;
 import net.getsett.spotifyalarm.integrations.spotify.SpotifyToken;
 import net.getsett.spotifyalarm.integrations.spotify.SpotifyTokenGenerator;
 import net.getsett.spotifyalarm.integrations.spotify.SpotifyUser;
-import net.getsett.spotifyalarm.integrations.spotify.SpotifyWebApiRequest;
 import net.getsett.spotifyalarm.models.HueOptions;
 import net.getsett.spotifyalarm.models.Options;
 import net.getsett.spotifyalarm.models.SpotifyOptions;
 import net.getsett.spotifyalarm.services.SunsetService;
 
-import org.acra.ACRA;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
