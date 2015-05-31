@@ -18,6 +18,7 @@ import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.Volley;
@@ -143,6 +144,9 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
             PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
 
             alarms.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), alarmIntent);
+
+            Toast toast = Toast.makeText(getActivity(), "Alarm set", Toast.LENGTH_SHORT);
+            toast.show();
         }
     }
     // TODO: Rename parameter arguments, choose names that match

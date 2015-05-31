@@ -15,6 +15,7 @@ import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -110,6 +111,9 @@ public class StartSunsetFragment extends Fragment
             Intent intent = new Intent(getActivity(), SunsetService.class);
             intent.putExtra("options", options);
             getActivity().startService(intent);
+
+            Toast toast = Toast.makeText(getActivity(), "Good night :)", Toast.LENGTH_SHORT);
+            toast.show();
         }
     }
     // TODO: Rename parameter arguments, choose names that match
