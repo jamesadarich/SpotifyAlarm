@@ -69,7 +69,7 @@ public class StartSunsetFragment extends Fragment
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 
         if (getActivity().findViewById(R.id.playlistSwitch) == buttonView) {
-            getActivity().findViewById(R.id.playlistSelect).setEnabled(isChecked);
+            getActivity().findViewById(R.id.sunsetPlaylistSelect).setEnabled(isChecked);
             getActivity().findViewById(R.id.playlistRandomise).setEnabled(isChecked);
         }
         else if (getActivity().findViewById(R.id.lightSwitch) == buttonView) {
@@ -90,15 +90,11 @@ public class StartSunsetFragment extends Fragment
 
                 options.SpotifyOptions = new SpotifyOptions();
                 options.SpotifyOptions.Token = _spotifyToken.toString();
-                options.SpotifyOptions.RefreshToken = _spotifyToken.getRefreshToken();
+                //options.SpotifyOptions.RefreshToken = _spotifyToken.getRefreshToken();
                 options.SpotifyOptions.Randomise = ((Switch)getActivity().findViewById(R.id.playlistRandomise)).isChecked();
 
-                Spinner s = (Spinner) getActivity().findViewById(R.id.playlistSelect);
-                try {
-                    options.SpotifyOptions.PlaylistUri = _spotifyPlaylists.getJSONObject((int) s.getSelectedItemId()).get("uri").toString();
-                } catch (JSONException exception) {
-                    ACRA.getErrorReporter().handleSilentException(exception);
-                }
+                Spinner s = (Spinner) getActivity().findViewById(R.id.sunsetPlaylistSelect);
+                options.SpotifyOptions.PlaylistUri = _spotifyPlaylists[(int)s.getSelectedItemId()].Uri;
             }
 
             if (((Switch)getActivity().findViewById(R.id.lightSwitch)).isChecked()) {
@@ -107,7 +103,7 @@ public class StartSunsetFragment extends Fragment
 
                 Spinner s = (Spinner) getActivity().findViewById(R.id.lightSelect);
 
-                options.HueOptions.LightBulbId =  _lights.get(s.getSelectedItem().toString());
+                options.HueOptions.LightBulbId =  ((HueLightBulb)s.getSelectedItem()).getId();
             }
 
             //Create new intent add the info and start the service!
@@ -210,7 +206,7 @@ public class StartSunsetFragment extends Fragment
         }
     }
 
-    private JSONArray _spotifyPlaylists;
+    private SpotifyPlaylist[] _spotifyPlaylists;
 
     // TODO: Replace with your redirect URI
     private static final String REDIRECT_URI = "spotify-alarm://callback";
@@ -291,8 +287,8 @@ public class StartSunsetFragment extends Fragment
             //loadImageFromNetwork(urls[0]);
 
             SpotifyTokenGenerator spotifyTokenGenerator = new SpotifyTokenGenerator(getActivity());
-            SpotifyToken spotifyToken = spotifyTokenGenerator.getToken(_spotifyCode);
-            SpotifyUser user = new SpotifyUser(spotifyToken, getActivity());
+            _spotifyToken = spotifyTokenGenerator.getToken(_spotifyCode);
+            SpotifyUser user = new SpotifyUser(_spotifyToken, getActivity());
             return user.getPlaylists();
         }
 
@@ -304,13 +300,12 @@ public class StartSunsetFragment extends Fragment
         protected void onPostExecute(List<SpotifyPlaylist> playlists) {
             //mImageView.setImageBitmap(result);
             // When the loop is finished, updates the notification
-
-            Spinner s = (Spinner) getActivity().findViewById(R.id.playlistSelect);
-            SpotifyPlaylist[] playlistsArray = new SpotifyPlaylist[playlists.size()];
-            playlistsArray = playlists.toArray(playlistsArray);
+            Spinner s = (Spinner) getActivity().findViewById(R.id.sunsetPlaylistSelect);
+            _spotifyPlaylists = new SpotifyPlaylist[playlists.size()];
+            _spotifyPlaylists = playlists.toArray(_spotifyPlaylists);
             SpotifyPlaylistAdapter adapter = new SpotifyPlaylistAdapter(
                     getActivity(),
-                    playlistsArray
+                    _spotifyPlaylists
             );
             s.setAdapter(adapter);
         }

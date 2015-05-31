@@ -31,7 +31,7 @@
     <Spinner
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/playlistSelect" />
+        android:id="@+id/sunsetPlaylistSelect" />
 
     <Switch
         android:layout_width="fill_parent"
