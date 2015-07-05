@@ -94,7 +94,7 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
             Intent intent = new Intent(context, AlarmBroadcastReceiver.class);
 
 
-            SeekBar seekBar = (SeekBar)getActivity().findViewById(R.id.easePeriod);
+            SeekBar seekBar = (SeekBar)getActivity().findViewById(R.id.sunriseEasePeriod);
 
 
             AlarmManager alarms ;
@@ -142,7 +142,8 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
             intent.putExtra("options", options);
             PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
 
-            alarms.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), alarmIntent);
+            // set the alarm to start the selected ease period before the desired wake up time
+            alarms.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis() - (options.TimeToSunset * 60000), alarmIntent);
 
             Toast toast = Toast.makeText(getActivity(), "Alarm set", Toast.LENGTH_SHORT);
             toast.show();
@@ -200,7 +201,7 @@ implements View.OnClickListener, CompoundButton.OnCheckedChangeListener  {
         ((Switch)view.findViewById(R.id.playlistSwitch)).setOnCheckedChangeListener(this);
         ((Switch)view.findViewById(R.id.lightSwitch)).setOnCheckedChangeListener(this);
 
-        SeekBar sk =(SeekBar) view.findViewById(R.id.easePeriod);
+        SeekBar sk =(SeekBar) view.findViewById(R.id.sunriseEasePeriod);
 
         final TextView seekBarValue = (TextView)view.findViewById(R.id.easePeriodText);
 

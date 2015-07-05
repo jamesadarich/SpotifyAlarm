@@ -24,7 +24,7 @@
     <SeekBar
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/easePeriod"
+        android:id="@+id/sunriseEasePeriod"
         android:max="99" />
 
 
