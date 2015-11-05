@@ -115,38 +115,51 @@ public class SunriseService extends IntentService {
             //Initially set the brightness to 0
             lightBulb.setBrightness(0);
 
+            try {
+                if (true) {
+                    throw new Exception("report test");
+                }
+            }
+            catch(Exception e) {
+                ACRA.getErrorReporter().handleSilentException(e);
+            }
+
 
             int brightness = lightBulb.getBrightness();
             while (brightness < 255) {
-                brightness++;
-                double progress = (double) brightness / 255.0;
-                int progressPercent = (int) Math.floor(progress * 100);
-                publishProgress(progressPercent);
-                int interval = (int) (progress * (_options.TimeToSunset * 60 * 1000)) / brightness;
                 try {
-                    Thread.sleep(interval);
-                }
-                catch (InterruptedException exception){
+                    brightness++;
+                    double progress = (double) brightness / 255.0;
+                    int progressPercent = (int) Math.floor(progress * 100);
+                    publishProgress(progressPercent);
+                    int interval = (int) (progress * (_options.TimeToSunset * 60 * 1000)) / brightness;
+                    try {
+                        Thread.sleep(interval);
+                    } catch (InterruptedException exception) {
 
-                }
-                lightBulb.setBrightness(brightness);
-
-                //Adjust the spotify volume
-                if (_options.SpotifyOptions != null) {
-                    if (progressPercent > 10) {
-
-                        AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-                        int volumeindex = (int)((double)audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) * 0.75);
-                        volumeindex = volumeindex * progressPercent;
-                        volumeindex = volumeindex / 100;
-                        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volumeindex, 0);
                     }
+                    lightBulb.setBrightness(brightness);
+
+                    //Adjust the spotify volume
+                    if (_options.SpotifyOptions != null) {
+                        if (progressPercent > 10) {
+
+                            AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+                            int volumeindex = (int) ((double) audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) * 0.75);
+                            volumeindex = volumeindex * progressPercent;
+                            volumeindex = volumeindex / 100;
+                            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volumeindex, 0);
+                        }
                     /*else {
                         _player.pause();
                         Spotify.destroyPlayer(this);
 
                         //TODO Return the volume to where it should be
                     }*/
+                    }
+                } catch (Exception e) {
+                   // ACRA.getErrorReporter().handleSilentException(e);
+                    Integer x = 1;
                 }
             }
 
